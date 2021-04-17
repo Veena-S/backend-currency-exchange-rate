@@ -1,8 +1,8 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import methodOverride from 'method-override';
-
 import bindRoutes from './routes.mjs';
+import PORT from './constants.js';
 
 // Initialise Express instance
 const app = express();
@@ -22,7 +22,7 @@ app.use(express.static('public'));
 // Bind route definitions to the Express application
 bindRoutes(app);
 
-// Set Express to listen on the given port
-// If PORT value is set in the env, use that. Else use 3004
-const PORT = process.env.PORT || 3004;
+// // Set Express to listen on the given port
+// // If PORT value is set in the env, use that. Else use 3004
+// const PORT = process.env.PORT || 3004;
 app.listen(PORT);
