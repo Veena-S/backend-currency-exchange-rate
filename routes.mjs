@@ -9,6 +9,10 @@ export default function bindRoutes(app) {
   const currencyCntrlr = currencyController();
 
   // Define the routes
+  // Root - returns the list of currencies
   app.get('/', currencyCntrlr.getCurrencyList);
+  // API to return the list of currencies
   app.get('/api/currencies', currencyCntrlr.getCurrencyList);
+  // API to return the real-time exchange rates for a set of currencies
+  app.get('/api/latest-rate/:base', currencyCntrlr.getRealTimeExchangeRates);
 }
