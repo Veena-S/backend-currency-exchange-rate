@@ -91,15 +91,9 @@ export default function currencyController() {
           // Send the complete response data
           // This response object has the structure:
           /**
-           response: {
-             date: '2021-04-17T14:04:42Z',
-             base: 'USD',
-             rates: {
-               AED: 3.6725,
-               AFN: 77.49777256,
-               ....
-             }
-           }
+           response: { date: '2021-04-17', base: 'USD',
+                       rates: { AED: 3.6725, AFN: 77.49777256, .... }
+                    }
            */
           response.status(result.data.meta.code).send(result.data.response);
         }
@@ -116,14 +110,35 @@ export default function currencyController() {
   };
 
   /**
-   *
+   * This function gets the historical data for a single day
+   * @param urlHistoricalRate - URL
+   * @returns - returns the response from the URL access
+   */
+  const getSingleHistoricalRate = async (urlHistoricalRate) => {
+    try {
+      const result = await axios.get(urlHistoricalRate);
+      // Send the complete response data
+      // This response object has the structure:
+      /**
+           response: { date: '2021-04-17', base: 'USD',
+                       rates: { AED: 3.6725, AFN: 77.49777256, .... }
+                    }
+           */
+      return result;
+    } catch (error) {
+      return error;
+    }
+  };
+
+  /**
+   * This function gets all the historical data based on the number of days mentioned in the request
    * @param request - HTTP request param
    * @returns - ReturnData: { status: 200, statusText: 'Success',
    *                          data: {[yyyy-mm-dd]: {status: 200, statusText: 'Success',
    *                                                response: {date: '2021-04-17', base: 'SGD',
    *                                                           rates: {  AED: 2.75196681,....}},
    *                                 [yyyy-mm-dd]:{status: 200, statusText: 'Success',
-   *                                                response:{<data returned from axios>}}} }
+   *                                           response:{<data returned from axios call to URL>}}} }
    */
   const getAllHistoricalRates = async (request) => {
     // request params and the specified currencies as query in the url
@@ -139,6 +154,7 @@ export default function currencyController() {
     if (currencies !== undefined && currencies.length !== 0) {
       urlHistoricalRate += `&symbols=${currencies}`;
     }
+
     // Data to be returned is stored in this.
     // Key will be the historical date queried and the value will be the whole data
     // It also stores the status of the complete operation
@@ -150,67 +166,51 @@ export default function currencyController() {
       lastDate.setDate(lastDate.getDate() - 1);
       // Convert the date into the required form of 'YYYY-MM-DD' for the url
       const historicalDate = moment(lastDate).format('YYYY-MM-DD');
+
       urlHistoricalRate += `&date=${historicalDate}`;
-      returnData.data[historicalDate] = { status: 200, statusText: 'Success', response: {} };
+
       // Call to CurrencyScoop
-      axios.get(urlHistoricalRate)
-        .then((result) => {
-        // The request to Currency Scoop is a success
-        // The returned result can be obtained from result.data
-          console.log('Result Code: ', result.data.meta.code);
-          console.log('Result Response: ', result.data.response);
-          // console.log('Full result: ', result.data);
-
-          // Got the response correctly.
-          // Send the complete response data
-          // This response object has the structure:
-          /**
-           response: {
-             date: '2021-04-17',
-             base: 'USD',
-             rates: {
-               AED: 3.6725,
-               AFN: 77.49777256,
-               ....
-             }
-           }
-           */
-
-          // Check whether base currency returned in the response is same as the requested
-          if (base !== result.data.response.base) {
+      // eslint-disable-next-line no-await-in-loop
+      const historicalRateResult = await getSingleHistoricalRate(urlHistoricalRate);
+      console.log('historicalRateResult: ', historicalRateResult);
+      if (historicalRateResult.status === 200) {
+        returnData.data[historicalDate] = {};
+        // Got the response correctly.
+        // Check whether base currency returned in the response is same as the requested
+        if (base !== historicalRateResult.data.response.base) {
           // If they are not same return error
-            const errMsg = `Failed to get the exchange rates for the base currency: ${base}.`;
-            returnData.data[historicalDate].status = 422;
-            returnData.data[historicalDate].statusText = errMsg;
-            // response.status(422).send(errMsg);
-          }
-          else if (historicalDate !== result.data.response.date) {
-            const errMsg = `Failed to get the exchange rates for the date: ${historicalDate}. Check the date specified again.`;
-            // response.status(422).send(errMsg);
-            returnData.data[historicalDate].status = 422;
-            returnData.data[historicalDate].statusText = errMsg;
-          }
-          else {
-            returnData.data[historicalDate].status = result.data.meta.code;
-            returnData.data[historicalDate].statusText = 'Success';
-            returnData.data[historicalDate].response = result.data.response;
-          }
-        })
-        .catch((error) => {
+          const errMsg = `Failed to get the exchange rates for the base currency: ${base}.`;
+          returnData.data[historicalDate].status = 422;
+          returnData.data[historicalDate].statusText = errMsg;
+        }
+        else if (historicalDate !== historicalRateResult.data.response.date) {
+          const errMsg = `Failed to get the exchange rates for the date: ${historicalDate}. Check the date specified again.`;
+          returnData.data[historicalDate].status = 422;
+          returnData.data[historicalDate].statusText = errMsg;
+        }
+        else {
+          returnData.data[historicalDate].status = historicalRateResult.data.meta.code;
+          returnData.data[historicalDate].statusText = 'Success';
+          returnData.data[historicalDate].response = historicalRateResult.data.response;
+        }
+      }
+      else {
+        console.log(`Error: ${urlHistoricalRate}`);
         // Error is returned from Currecy Scoop API
         // Get the error status code and text and send it to the client
-          console.log(error);
-          console.log('Result Code: ', error.response.status);
-          console.log('Result Status Text: ', error.response.statusText);
-          const errMsg = `Failed to get the real time exchange rate. Error: ${error.response.statusText}`;
-          // response.status(error.response.status).send(errMsg);
-          returnData.status = 422;
-          returnData.statusText = errMsg;
-          // If an error is returned from CurrencyScoop, no need to continue further
-          return returnData;
-        });
+        console.log(historicalRateResult);
+        console.log('Result Code: ', historicalRateResult.response.status);
+        console.log('Result Status Text: ', historicalRateResult.response.statusText);
+        const errMsg = `Failed to get the real time exchange rate. Error: ${historicalRateResult.response.statusText}`;
+        // response.status(error.response.status).send(errMsg);
+        returnData.status = 422;
+        returnData.statusText = errMsg;
+        // If an error is returned from CurrencyScoop, no need to continue further
+        return returnData;
+      }
       days -= 1;
     }
+    console.log('Returning Result');
     // Represents the general status of the complete process
     returnData.status = 200;
     returnData.statusText = 'Success';
