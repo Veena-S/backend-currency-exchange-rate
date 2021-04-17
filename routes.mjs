@@ -1,11 +1,14 @@
-import db from './models/index.mjs';
+// Import Models
 
-// import your controllers here
+// Import Controllers
+import currencyController from './controllers/currency-controller.mjs';
 
+// Main function that binds the routes to the requestes
 export default function bindRoutes(app) {
+  // initialize the controller functions
+  const currencyCntrlr = currencyController();
 
-  // initialize the controller functions here
-  // pass in the db for all callbacks
-
-  // define your route matchers here using app
+  // Define the routes
+  app.get('/', currencyCntrlr.getCurrencyList);
+  app.get('/api/currencies', currencyCntrlr.getCurrencyList);
 }
