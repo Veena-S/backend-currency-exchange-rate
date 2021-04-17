@@ -1,5 +1,6 @@
 // const axios = require('axios').default;
 import axios from 'axios';
+import moment from 'moment';
 
 // set access key
 const API_KEY = '43142c72cdf44ba4f7b84e68cdf0066e';
@@ -115,13 +116,116 @@ export default function currencyController() {
   };
 
   /**
+   *
+   * @param request - HTTP request param
+   * @returns - ReturnData: { status: 200, statusText: 'Success',
+   *                          data: {[yyyy-mm-dd]: {status: 200, statusText: 'Success',
+   *                                                response: {date: '2021-04-17', base: 'SGD',
+   *                                                           rates: {  AED: 2.75196681,....}},
+   *                                 [yyyy-mm-dd]:{status: 200, statusText: 'Success',
+   *                                                response:{<data returned from axios>}}} }
+   */
+  const getAllHistoricalRates = async (request) => {
+    // request params and the specified currencies as query in the url
+    // Date Format: YYYY-MM-DD
+    // to disable the const error shown for base
+    // eslint-disable-next-line prefer-const
+    let { base, days } = request.params;
+    const { currencies } = request.query;
+
+    // Create the URL
+    // Syntax: https://api.currencyscoop.com/v1/historical?api_key=<API_KEY>&base=<>&date=<YYYY-MM-DD>&symbols=SGD,USD
+    let urlHistoricalRate = `${BASE_CURRENCY_SCOOP_URL}historical?${API_KEY_QUERY}&base=${base}`;
+    if (currencies !== undefined && currencies.length !== 0) {
+      urlHistoricalRate += `&symbols=${currencies}`;
+    }
+    // Data to be returned is stored in this.
+    // Key will be the historical date queried and the value will be the whole data
+    // It also stores the status of the complete operation
+    const returnData = { status: 200, statusText: 'Success', data: {} };
+    // Get the historical data for each day
+    const lastDate = new Date();
+    while (days > 0) {
+      // Calculate the previous day starting from today
+      lastDate.setDate(lastDate.getDate() - 1);
+      // Convert the date into the required form of 'YYYY-MM-DD' for the url
+      const historicalDate = moment(lastDate).format('YYYY-MM-DD');
+      urlHistoricalRate += `&date=${historicalDate}`;
+      returnData.data[historicalDate] = { status: 200, statusText: 'Success', response: {} };
+      // Call to CurrencyScoop
+      axios.get(urlHistoricalRate)
+        .then((result) => {
+        // The request to Currency Scoop is a success
+        // The returned result can be obtained from result.data
+          console.log('Result Code: ', result.data.meta.code);
+          console.log('Result Response: ', result.data.response);
+          // console.log('Full result: ', result.data);
+
+          // Got the response correctly.
+          // Send the complete response data
+          // This response object has the structure:
+          /**
+           response: {
+             date: '2021-04-17',
+             base: 'USD',
+             rates: {
+               AED: 3.6725,
+               AFN: 77.49777256,
+               ....
+             }
+           }
+           */
+
+          // Check whether base currency returned in the response is same as the requested
+          if (base !== result.data.response.base) {
+          // If they are not same return error
+            const errMsg = `Failed to get the exchange rates for the base currency: ${base}.`;
+            returnData.data[historicalDate].status = 422;
+            returnData.data[historicalDate].statusText = errMsg;
+            // response.status(422).send(errMsg);
+          }
+          else if (historicalDate !== result.data.response.date) {
+            const errMsg = `Failed to get the exchange rates for the date: ${historicalDate}. Check the date specified again.`;
+            // response.status(422).send(errMsg);
+            returnData.data[historicalDate].status = 422;
+            returnData.data[historicalDate].statusText = errMsg;
+          }
+          else {
+            returnData.data[historicalDate].status = result.data.meta.code;
+            returnData.data[historicalDate].statusText = 'Success';
+            returnData.data[historicalDate].response = result.data.response;
+          }
+        })
+        .catch((error) => {
+        // Error is returned from Currecy Scoop API
+        // Get the error status code and text and send it to the client
+          console.log(error);
+          console.log('Result Code: ', error.response.status);
+          console.log('Result Status Text: ', error.response.statusText);
+          const errMsg = `Failed to get the real time exchange rate. Error: ${error.response.statusText}`;
+          // response.status(error.response.status).send(errMsg);
+          returnData.status = 422;
+          returnData.statusText = errMsg;
+          // If an error is returned from CurrencyScoop, no need to continue further
+          return returnData;
+        });
+      days -= 1;
+    }
+    // Represents the general status of the complete process
+    returnData.status = 200;
+    returnData.statusText = 'Success';
+    return returnData;
+  };
+
+  /**
    * This function gets the historical time exchange rate  from CurrencyScoop, based on the
    * "base" for specified currency list, in a particular time period.
    * @param request - HTTP request param. It holds the query parameter for the base currency
    * @param response - HTTP response that an Express app sends when it gets an HTTP request.
    */
   const getTimePeriodExchangeRates = async (request, response) => {
-
+    const returnData = await getAllHistoricalRates(request);
+    response.status(200).send(returnData);
   };
 
   return {
