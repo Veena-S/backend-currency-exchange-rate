@@ -15,4 +15,6 @@ export default function bindRoutes(app) {
   app.get('/api/currencies', currencyCntrlr.getCurrencyList);
   // API to return the real-time exchange rates for a set of currencies
   app.get('/api/latest-rate/:base', currencyCntrlr.getRealTimeExchangeRates);
+  // API to return the historical exchange rates for a time-period for a specific currency
+  app.get('/api/historical-rate/:base/:startDate/:endDate', currencyCntrlr.getTimePeriodExchangeRates);
 }

@@ -40,7 +40,7 @@ describe('Backend Currency Exchange', () => {
     });
   });
 
-  // To test the fetching of latest rate
+  // To test the fetching of latest rate for all the currencies
   describe('Get latest currency rate', () => {
     // This method tests for the api '/api/latest-rate/:base'
     it('Get Real Time Exchange Rates', (done) => {
@@ -58,6 +58,31 @@ describe('Backend Currency Exchange', () => {
 
           // Rate of base value should be 1
           expect(res.body.rates.SGD).to.equal(1);
+
+          // done() will be called when everything is success
+          done();
+        });
+    });
+  });
+
+  // To test the fetching of latest rate for a single currency
+  describe('Get latest currency rate for a single currency', () => {
+    // This method tests for the api '/api/latest-rate/:base'
+    it('Get Real Time Exchange Rates for AUD', (done) => {
+      chai.request(serverUrl)
+        .get('/api/latest-rate/SGD?currencies=AUD')
+        .end((err, res) => {
+          // Verify the response status of the API
+          expect(res.status).to.equal(200);
+
+          // Verify the type of the response body
+          expect(res.body).to.be.a('object');
+
+          // Only one currency rate should be returned
+          expect(Object.keys(res.body.rates).length).to.equal(1);
+
+          // It should be AUD
+          expect(res.body.rates).to.have.property('AUD');
 
           // done() will be called when everything is success
           done();

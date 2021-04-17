@@ -50,10 +50,25 @@ export default function currencyController() {
    * @param response - HTTP response that an Express app sends when it gets an HTTP request.
    */
   const getRealTimeExchangeRates = async (request, response) => {
+    // base = the base currency which should be as the base value for exchange rates
     const { base } = request.params;
+    // Currencies for which exchange rates has to be found
+    // query: { currencies: 'USD' },
+    // query: { currencies: 'USD,AUD' },
+    // query: { currencies: '' },
+    const { currencies } = request.query;
+    console.log(typeof (currencies));
+    // if the currencies is empty, get the rates for all the currencies
+    // if not empty append it to the url
+
     // Create the URL
     // Syntax: https://api.currencyscoop.com/v1/latest?api_key=<API_KEY>&base=<>
-    const urlLatestRate = `${BASE_CURRENCY_SCOOP_URL}latest?${API_KEY_QUERY}&base=${base}`;
+    let urlLatestRate = `${BASE_CURRENCY_SCOOP_URL}latest?${API_KEY_QUERY}&base=${base}`;
+    if (currencies !== undefined && currencies.length !== 0) {
+      urlLatestRate += `&symbols=${currencies}`;
+    }
+
+    console.log(urlLatestRate);
 
     // Create Axios request
     axios.get(urlLatestRate)
@@ -99,8 +114,19 @@ export default function currencyController() {
       });
   };
 
+  /**
+   * This function gets the historical time exchange rate  from CurrencyScoop, based on the
+   * "base" for specified currency list, in a particular time period.
+   * @param request - HTTP request param. It holds the query parameter for the base currency
+   * @param response - HTTP response that an Express app sends when it gets an HTTP request.
+   */
+  const getTimePeriodExchangeRates = async (request, response) => {
+
+  };
+
   return {
     getCurrencyList,
     getRealTimeExchangeRates,
+    getTimePeriodExchangeRates,
   };
 }
