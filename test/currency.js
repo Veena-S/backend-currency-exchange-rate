@@ -89,4 +89,29 @@ describe('Backend Currency Exchange', () => {
         });
     });
   });
+
+  // To Do
+  // // To test the retrieval of historical data
+  // describe('Get historical for 3 days for a single currency', () => {
+  //   // This method tests for the api '/api/latest-rate/:base'
+  //   it('Get Historical Rates for AUD', (done) => {
+  //     chai.request(serverUrl)
+  //       .get('/api/historical-rate/SGD/3?currencies=AUD')
+  //       .end((err, res) => {
+  //         // Verify the response status of the API
+  //         expect(res.status).to.equal(200);
+
+  //         // Verify the type of the response body
+  //         expect(res.body).to.be.a('object');
+
+  //         // Only one currency rate should be returned
+  //         expect(Object.keys(res.body.data).length).to.equal(3);
+
+  //         // To Do: Verify the returned dates
+
+  //         // done() will be called when everything is success
+  //         done();
+  //       });
+  //   });
+  // });
 });
