@@ -28,17 +28,12 @@ export default function currencyController() {
       .then((result) => {
         // The request to Currency Scoop is a success
         // The returned result can be obtained from result.data
-        console.log('Result Code: ', result.data.meta.code);
-        console.log('Result Response: ', result.data.response);
-        // console.log('Full result: ', result.data);
         response.status(result.data.meta.code).send(result.data.response.fiats);
       })
       .catch((error) => {
         // Error is returned from Currecy Scoop API
         // Get the error status code and text and send it to the client
         console.log(error);
-        console.log('Result Code: ', error.response.status);
-        console.log('Result Status Text: ', error.response.statusText);
         const errorMessage = `Failed to get the currency list. Error: ${error.response.statusText}`;
         response.status(error.response.status).send(errorMessage);
       });
@@ -58,7 +53,6 @@ export default function currencyController() {
     // query: { currencies: 'USD,AUD' },
     // query: { currencies: '' },
     const { currencies } = request.query;
-    console.log(typeof (currencies));
     // if the currencies is empty, get the rates for all the currencies
     // if not empty append it to the url
 
@@ -69,16 +63,11 @@ export default function currencyController() {
       urlLatestRate += `&symbols=${currencies}`;
     }
 
-    console.log(urlLatestRate);
-
     // Create Axios request
     axios.get(urlLatestRate)
       .then((result) => {
         // The request to Currency Scoop is a success
         // The returned result can be obtained from result.data
-        console.log('Result Code: ', result.data.meta.code);
-        console.log('Result Response: ', result.data.response);
-        // console.log('Full result: ', result.data);
 
         // Check whether base currency returned in the response is same as the requested
         if (base !== result.data.response.base) {
@@ -102,8 +91,6 @@ export default function currencyController() {
         // Error is returned from Currecy Scoop API
         // Get the error status code and text and send it to the client
         console.log(error);
-        console.log('Result Code: ', error.response.status);
-        console.log('Result Status Text: ', error.response.statusText);
         const errorMessage = `Failed to get the real time exchange rate. Error: ${error.response.statusText}`;
         response.status(error.response.status).send(errorMessage);
       });
@@ -172,7 +159,6 @@ export default function currencyController() {
       // Call to CurrencyScoop
       // eslint-disable-next-line no-await-in-loop
       const historicalRateResult = await getSingleHistoricalRate(urlHistoricalRate);
-      console.log('historicalRateResult: ', historicalRateResult);
       if (historicalRateResult.status === 200) {
         returnData.data[historicalDate] = {};
         // Got the response correctly.
@@ -195,12 +181,9 @@ export default function currencyController() {
         }
       }
       else {
-        console.log(`Error: ${urlHistoricalRate}`);
         // Error is returned from Currecy Scoop API
         // Get the error status code and text and send it to the client
         console.log(historicalRateResult);
-        console.log('Result Code: ', historicalRateResult.response.status);
-        console.log('Result Status Text: ', historicalRateResult.response.statusText);
         const errMsg = `Failed to get the real time exchange rate. Error: ${historicalRateResult.response.statusText}`;
         // response.status(error.response.status).send(errMsg);
         returnData.status = 422;
